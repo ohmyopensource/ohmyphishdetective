@@ -1,0 +1,36 @@
+# Auto-normalize line endings
+* text=auto eol=lf
+
+# Explicitly text files
+*.rs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.html text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.eml binary
+*.sqlite binary
+*.db binary
+*.woff binary
+*.woff2 binary
+
+# Cargo.lock and pnpm-lock
+Cargo.lock text eol=lf
+pnpm-lock.yaml text eol=lf
