@@ -43,4 +43,12 @@ export interface AuthCheckResult {
 export interface EmailAnalysis {
   parsed: ParsedEmail;
   auth: AuthCheckResult;
+  urls: ExtractedUrl[];
+}
+
+export interface ExtractedUrl {
+  displayed_text: string | null;
+  actual_url: string;
+  domain: string | null;
+  is_mismatch: boolean;
 }

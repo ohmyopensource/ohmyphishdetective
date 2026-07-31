@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 use crate::core::mail_parser::{parse_eml, ParsedEmail, ParseError};
 use crate::core::auth_check::{check_auth, AuthCheckResult};
+use crate::core::url_extractor::{extract_from_html, extract_from_text, ExtractedUrl};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmailAnalysis {
     pub parsed: ParsedEmail,
     pub auth: AuthCheckResult,
+    pub urls: Vec<ExtractedUrl>,
 }
 
 #[tauri::command]
@@ -13,5 +15,13 @@ pub fn parse_email_command(raw_eml: Vec<u8>) -> Result<EmailAnalysis, String> {
     let parsed = parse_eml(&raw_eml).map_err(|e: ParseError| e.to_string())?;
     let auth = check_auth(&parsed.headers.authentication_results);
 
-    Ok(EmailAnalysis { parsed, auth })
+    let urls = if let Some(html) = &parsed.body_html {
+        extract_from_html(html)
+    } else if let Some(text) = &parsed.body_text {
+        extract_from_text(text)
+    } else {
+        Vec::new()
+    };
+
+    Ok(EmailAnalysis { parsed, auth, urls })
 }
