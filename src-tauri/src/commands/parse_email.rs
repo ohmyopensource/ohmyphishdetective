@@ -4,6 +4,7 @@ use crate::core::auth_check::{check_auth, AuthCheckResult};
 use crate::core::url_extractor::{extract_from_html, extract_from_text, ExtractedUrl};
 use crate::core::header_trace::{parse_hops, Hop};
 use crate::core::ioc_aggregator::{aggregate_iocs, Ioc};
+use crate::core::verdict::{compute_verdict, VerdictResult};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmailAnalysis {
@@ -12,6 +13,7 @@ pub struct EmailAnalysis {
     pub urls: Vec<ExtractedUrl>,
     pub hops: Vec<Hop>,
     pub iocs: Vec<Ioc>,
+    pub verdict: VerdictResult,
 }
 
 #[tauri::command]
@@ -29,6 +31,7 @@ pub fn parse_email_command(raw_eml: Vec<u8>) -> Result<EmailAnalysis, String> {
 
     let hops = parse_hops(&parsed.headers.received_chain);
     let iocs = aggregate_iocs(&parsed, &hops, &urls);
+    let verdict = compute_verdict(&parsed, &auth, &urls);
 
-    Ok(EmailAnalysis { parsed, auth, urls, hops, iocs })
+    Ok(EmailAnalysis { parsed, auth, urls, hops, iocs, verdict })
 }

@@ -46,8 +46,8 @@ export interface EmailAnalysis {
   urls: ExtractedUrl[];
   hops: Hop[];
   iocs: Ioc[];
+  verdict: VerdictResult;
 }
-
 export interface ExtractedUrl {
   displayed_text: string | null;
   actual_url: string;
@@ -74,4 +74,17 @@ export interface Ioc {
   ioc_type: IocType;
   value: string;
   source: string;
+}
+
+export type Verdict = 'Clean' | 'Suspicious' | 'Malicious';
+
+export interface ScoreReason {
+  description: string;
+  points: number;
+}
+
+export interface VerdictResult {
+  verdict: Verdict;
+  score: number;
+  reasons: ScoreReason[];
 }

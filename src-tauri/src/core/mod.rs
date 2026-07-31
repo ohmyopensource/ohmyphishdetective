@@ -3,3 +3,4 @@ pub mod auth_check;
 pub mod url_extractor;
 pub mod header_trace;
 pub mod ioc_aggregator;
+pub mod verdict;
