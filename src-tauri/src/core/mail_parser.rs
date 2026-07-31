@@ -1,6 +1,29 @@
 use serde::{Deserialize, Serialize};
 use mail_parser::{MessageParser, MimeHeaders};
 use sha2::{Digest, Sha256};
+use regex::Regex;
+use std::sync::OnceLock;
+
+static RECEIVED_REGEX: OnceLock<Regex> = OnceLock::new();
+
+fn received_regex() -> &'static Regex {
+    RECEIVED_REGEX.get_or_init(|| {
+        Regex::new(r"(?im)^Received:[ \t]*(.*(?:\r?\n[ \t]+.*)*)").unwrap()
+    })
+}
+
+fn extract_received_chain(raw_header_block: &str) -> Vec<String> {
+    received_regex()
+        .captures_iter(raw_header_block)
+        .map(|cap| {
+            cap[1]
+                .lines()
+                .map(|line| line.trim())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .collect()
+}
 
 /// Fully parsed representation of an .eml file as JSON.
 #[derive(Debug, Serialize, Deserialize)]
@@ -61,6 +84,13 @@ pub fn parse_eml(raw_bytes: &[u8]) -> Result<ParsedEmail, ParseError> {
         .parse(raw_bytes)
         .ok_or_else(|| ParseError::InvalidFormat("Could not parse message structure".into()))?;
 
+    let raw_header_block = String::from_utf8_lossy(
+        &raw_bytes[..message.raw_message().len().min(raw_bytes.len())]
+        ).lines()
+        .take_while(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
+
     // --- Headers ---
     let from = message
         .from()
@@ -93,11 +123,7 @@ pub fn parse_eml(raw_bytes: &[u8]) -> Result<ParsedEmail, ParseError> {
     let date = message.date().map(|d| d.to_rfc3339());
     let message_id = message.message_id().map(|s| s.to_string());
 
-    let received_chain: Vec<String> = message
-        .header_values("Received")
-        .filter_map(|v| v.as_text())
-        .map(|s| s.to_string())
-        .collect();
+    let received_chain = extract_received_chain(&raw_header_block);
 
     let authentication_results: Vec<String> = message
         .header_values("Authentication-Results")
@@ -139,12 +165,6 @@ pub fn parse_eml(raw_bytes: &[u8]) -> Result<ParsedEmail, ParseError> {
         })
         .collect();
 
-    let raw_header_block = String::from_utf8_lossy(
-        &raw_bytes[..message.raw_message().len().min(raw_bytes.len())]
-    ).lines()
-     .take_while(|line| !line.is_empty())
-     .collect::<Vec<_>>()
-     .join("\n");
 
     Ok(ParsedEmail {
         headers,
