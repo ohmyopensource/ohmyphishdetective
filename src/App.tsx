@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { parseEmail } from './lib/tauri';
-import type { ParsedEmail } from './types/email';
+import type { EmailAnalysis } from './types/email';
 
 function App() {
-  const [result, setResult] = useState<ParsedEmail | null>(null);
+  const [result, setResult] = useState<EmailAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {

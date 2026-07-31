@@ -24,3 +24,23 @@ export interface ParsedEmail {
   attachments: Attachment[];
   raw_header_block: string;
 }
+
+export type AuthVerdict =
+  | 'Pass'
+  | 'Fail'
+  | 'SoftFail'
+  | 'Neutral'
+  | 'None'
+  | 'NotEvaluated';
+
+export interface AuthCheckResult {
+  spf: AuthVerdict;
+  dkim: AuthVerdict;
+  dmarc: AuthVerdict;
+  raw_source: string | null;
+}
+
+export interface EmailAnalysis {
+  parsed: ParsedEmail;
+  auth: AuthCheckResult;
+}
