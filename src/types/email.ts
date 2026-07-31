@@ -45,6 +45,7 @@ export interface EmailAnalysis {
   auth: AuthCheckResult;
   urls: ExtractedUrl[];
   hops: Hop[];
+  iocs: Ioc[];
 }
 
 export interface ExtractedUrl {
@@ -60,4 +61,17 @@ export interface Hop {
   by_host: string | null;
   timestamp: string | null;
   raw: string;
+}
+
+export type IocType =
+  | 'IpAddress'
+  | 'Domain'
+  | 'Url'
+  | 'Sha256'
+  | 'EmailAddress';
+
+export interface Ioc {
+  ioc_type: IocType;
+  value: string;
+  source: string;
 }
