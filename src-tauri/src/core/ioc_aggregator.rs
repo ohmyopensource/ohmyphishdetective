@@ -18,14 +18,11 @@ pub enum IocType {
 pub struct Ioc {
     pub ioc_type: IocType,
     pub value: String,
-    /// Where this IOC was found (e.g. "Received header hop 2", "Body link", "Attachment")
     pub source: String,
 }
 
 /// Aggregates every indicator of compromise extracted by the other
-/// core modules into a single, deduplicated list — the final output
-/// that gets exported in the report and could later feed threat-intel
-/// tooling (STIX/TAXII, MISP, etc.).
+/// core modules into a single, deduplicated list.
 pub fn aggregate_iocs(
     parsed: &ParsedEmail,
     hops: &[Hop],
@@ -124,6 +121,7 @@ mod tests {
             actual_url: "https://evil.com/login".to_string(),
             domain: Some("evil.com".to_string()),
             is_mismatch: false,
+            looks_like_credential_harvesting: false,
         }];
 
         let iocs = aggregate_iocs(&parsed, &hops, &urls);
@@ -143,17 +141,19 @@ mod tests {
                 actual_url: "https://evil.com/a".to_string(),
                 domain: Some("evil.com".to_string()),
                 is_mismatch: false,
+                looks_like_credential_harvesting: false,
             },
             crate::core::url_extractor::ExtractedUrl {
                 displayed_text: None,
                 actual_url: "https://evil.com/b".to_string(),
                 domain: Some("evil.com".to_string()),
                 is_mismatch: false,
+                looks_like_credential_harvesting: false,
             },
         ];
 
         let iocs = aggregate_iocs(&parsed, &[], &urls);
         let domain_count = iocs.iter().filter(|i| i.ioc_type == IocType::Domain && i.value == "evil.com").count();
-        assert_eq!(domain_count, 1); // same domain from two URLs -> deduplicated
+        assert_eq!(domain_count, 1);
     }
 }

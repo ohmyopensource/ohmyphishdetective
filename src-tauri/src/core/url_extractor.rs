@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use scraper::{Html, Selector};
 use regex::Regex;
 use std::sync::OnceLock;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ExtractedUrl {
@@ -9,15 +10,35 @@ pub struct ExtractedUrl {
     pub actual_url: String,
     pub domain: Option<String>,
     pub is_mismatch: bool,
+    pub looks_like_credential_harvesting: bool,
 }
 
 static PLAIN_URL_REGEX: OnceLock<Regex> = OnceLock::new();
 static DOMAIN_LIKE_REGEX: OnceLock<Regex> = OnceLock::new();
+static CREDENTIAL_KEYWORDS: OnceLock<Vec<String>> = OnceLock::new();
+
+const CREDENTIAL_KEYWORDS_JSON: &str =
+    include_str!("../../resources/keywords/credential_harvesting.json");
 
 fn plain_url_regex() -> &'static Regex {
     PLAIN_URL_REGEX.get_or_init(|| {
         Regex::new(r"https?://[^\s<>\x22\x27]+").unwrap()
     })
+}
+
+fn credential_keywords() -> &'static Vec<String> {
+    CREDENTIAL_KEYWORDS.get_or_init(|| {
+        let parsed: HashMap<String, Vec<String>> =
+            serde_json::from_str(CREDENTIAL_KEYWORDS_JSON)
+                .expect("credential_harvesting.json must be valid JSON");
+
+        parsed.into_values().flatten().collect()
+    })
+}
+
+fn looks_like_credential_harvesting(url: &str) -> bool {
+    let lower = url.to_lowercase();
+    credential_keywords().iter().any(|kw| lower.contains(kw.as_str()))
 }
 
 /// Extracts URLs from an HTML body, capturing both the visible anchor
@@ -41,11 +62,13 @@ pub fn extract_from_html(html: &str) -> Vec<ExtractedUrl> {
             let domain = extract_domain(&href);
             let is_mismatch = check_mismatch(&displayed_text, &href);
 
+            let harvesting_flag = looks_like_credential_harvesting(&href);
             Some(ExtractedUrl {
                 displayed_text,
                 actual_url: href,
                 domain,
                 is_mismatch,
+                looks_like_credential_harvesting: harvesting_flag,
             })
         })
         .collect()
@@ -58,11 +81,13 @@ pub fn extract_from_text(text: &str) -> Vec<ExtractedUrl> {
         .map(|m| {
             let url = m.as_str().to_string();
             let domain = extract_domain(&url);
+            let harvesting_flag = looks_like_credential_harvesting(&url);
             ExtractedUrl {
                 displayed_text: None,
                 actual_url: url,
                 domain,
                 is_mismatch: false,
+                looks_like_credential_harvesting: harvesting_flag,
             }
         })
         .collect()

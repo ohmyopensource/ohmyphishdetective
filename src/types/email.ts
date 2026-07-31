@@ -49,6 +49,7 @@ export interface EmailAnalysis {
   verdict: VerdictResult;
   mitre_techniques: MitreTechnique[];
   brand_impersonation: BrandImpersonationResult;
+  content_heuristics: ContentHeuristicsResult;
 }
 
 export interface ExtractedUrl {
@@ -56,6 +57,7 @@ export interface ExtractedUrl {
   actual_url: string;
   domain: string | null;
   is_mismatch: boolean;
+  looks_like_credential_harvesting: boolean;
 }
 
 export interface Hop {
@@ -104,4 +106,11 @@ export interface BrandImpersonationResult {
   brand: string | null;
   sender_domain: string | null;
   reason: string | null;
+}
+
+export interface ContentHeuristicsResult {
+  urgency_detected: boolean;
+  excessive_punctuation: boolean;
+  repeated_word_detected: boolean;
+  matched_phrases: string[];
 }

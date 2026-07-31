@@ -37,6 +37,7 @@ pub fn compute_verdict(
     auth: &AuthCheckResult,
     urls: &[ExtractedUrl],
     brand_check: &crate::core::brand_impersonation::BrandImpersonationResult,
+    content_check: &crate::core::content_heuristics::ContentHeuristicsResult,
 ) -> VerdictResult {
     let mut reasons = Vec::new();
     let mut score: u32 = 0;
@@ -128,6 +129,45 @@ pub fn compute_verdict(
     });
     score += brand_points;
 
+    // --- Credential harvesting keywords in URLs ---
+    let has_harvesting_keyword = urls.iter().any(|u| u.looks_like_credential_harvesting);
+    let harvesting_points = if has_harvesting_keyword { 10 } else { 0 };
+    reasons.push(ScoreReason {
+        description: if has_harvesting_keyword {
+            "One or more links contain credential-harvesting related keywords (login, verify, account, etc.)".to_string()
+        } else {
+            "No credential-harvesting keywords found in links".to_string()
+        },
+        points: harvesting_points,
+    });
+    score += harvesting_points;
+
+    // --- Content heuristics (urgency language, broken grammar patterns) ---
+    let mut content_signals = Vec::new();
+    if content_check.urgency_detected {
+        content_signals.push(format!(
+            "urgency language detected ({})",
+            content_check.matched_phrases.join(", ")
+        ));
+    }
+    if content_check.repeated_word_detected {
+        content_signals.push("repeated/doubled words found".to_string());
+    }
+    if content_check.excessive_punctuation {
+        content_signals.push("excessive punctuation (!!!/??? patterns)".to_string());
+    }
+
+    let content_points = (content_signals.len() as u32) * 5;
+    reasons.push(ScoreReason {
+        description: if content_signals.is_empty() {
+            "No urgency/grammar red flags detected in content".to_string()
+        } else {
+            content_signals.join("; ")
+        },
+        points: content_points,
+    });
+    score += content_points;
+
     let verdict = match score {
         0..=20 => Verdict::Clean,
         21..=50 => Verdict::Suspicious,
@@ -177,6 +217,7 @@ mod tests {
     use crate::core::mail_parser::{EmailHeaders, Attachment};
     use crate::core::auth_check::AuthVerdict;
     use crate::core::brand_impersonation::BrandImpersonationResult;
+    use crate::core::content_heuristics::ContentHeuristicsResult;
 
     fn base_parsed(from: &str, return_path: &str) -> ParsedEmail {
         ParsedEmail {
@@ -216,13 +257,22 @@ mod tests {
         }
     }
 
+    fn no_content_flags() -> ContentHeuristicsResult {
+        ContentHeuristicsResult {
+            urgency_detected: false,
+            excessive_punctuation: false,
+            repeated_word_detected: false,
+            matched_phrases: vec![],
+        }
+    }
+
     #[test]
     fn clean_email_scores_zero_but_lists_all_checks() {
         let parsed = base_parsed("a@example.com", "a@example.com");
-        let result = compute_verdict(&parsed, &clean_auth(), &[], &no_brand_impersonation());
+        let result = compute_verdict(&parsed, &clean_auth(), &[], &no_brand_impersonation(), &no_content_flags());
         assert_eq!(result.score, 0);
         assert_eq!(result.verdict, Verdict::Clean);
-        assert_eq!(result.reasons.len(), 7);
+        assert_eq!(result.reasons.len(), 9);
         assert!(result.reasons.iter().all(|r| r.points == 0));
     }
 
@@ -231,7 +281,7 @@ mod tests {
         let parsed = base_parsed("a@example.com", "a@example.com");
         let mut auth = clean_auth();
         auth.spf = AuthVerdict::Fail;
-        let result = compute_verdict(&parsed, &auth, &[], &no_brand_impersonation());
+        let result = compute_verdict(&parsed, &auth, &[], &no_brand_impersonation(), &no_content_flags());
         assert_eq!(result.score, 30);
         assert_eq!(result.verdict, Verdict::Suspicious);
     }
@@ -242,7 +292,7 @@ mod tests {
         let mut auth = clean_auth();
         auth.spf = AuthVerdict::Fail;
         auth.dkim = AuthVerdict::Fail;
-        let result = compute_verdict(&parsed, &auth, &[], &no_brand_impersonation());
+        let result = compute_verdict(&parsed, &auth, &[], &no_brand_impersonation(), &no_content_flags());
         assert_eq!(result.score, 70);
         assert_eq!(result.verdict, Verdict::Malicious);
     }
@@ -256,7 +306,7 @@ mod tests {
             size_bytes: 100,
             sha256: "x".to_string(),
         });
-        let result = compute_verdict(&parsed, &clean_auth(), &[], &no_brand_impersonation());
+        let result = compute_verdict(&parsed, &clean_auth(), &[], &no_brand_impersonation(), &no_content_flags());
         assert_eq!(result.score, 30);
     }
 
@@ -269,8 +319,21 @@ mod tests {
             sender_domain: Some("example.com".to_string()),
             reason: Some("fake reason".to_string()),
         };
-        let result = compute_verdict(&parsed, &clean_auth(), &[], &brand_check);
+        let result = compute_verdict(&parsed, &clean_auth(), &[], &brand_check, &no_content_flags());
         assert_eq!(result.score, 35);
         assert_eq!(result.verdict, Verdict::Suspicious);
+    }
+
+    #[test]
+    fn content_heuristics_add_points() {
+        let parsed = base_parsed("a@example.com", "a@example.com");
+        let content_check = ContentHeuristicsResult {
+            urgency_detected: true,
+            excessive_punctuation: true,
+            repeated_word_detected: false,
+            matched_phrases: vec!["act now".to_string()],
+        };
+        let result = compute_verdict(&parsed, &clean_auth(), &[], &no_brand_impersonation(), &content_check);
+        assert_eq!(result.score, 10);
     }
 }

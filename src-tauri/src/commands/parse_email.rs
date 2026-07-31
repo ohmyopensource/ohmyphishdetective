@@ -7,6 +7,7 @@ use crate::core::ioc_aggregator::{aggregate_iocs, Ioc};
 use crate::core::verdict::{compute_verdict, VerdictResult};
 use crate::core::mitre_mapper::{map_to_mitre, MitreTechnique};
 use crate::core::brand_impersonation::{check_brand_impersonation, BrandImpersonationResult};
+use crate::core::content_heuristics::{analyze_content, ContentHeuristicsResult};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmailAnalysis {
@@ -18,6 +19,7 @@ pub struct EmailAnalysis {
     pub verdict: VerdictResult,
     pub mitre_techniques: Vec<MitreTechnique>,
     pub brand_impersonation: BrandImpersonationResult,
+    pub content_heuristics: ContentHeuristicsResult,
 }
 
 #[tauri::command]
@@ -42,8 +44,13 @@ pub fn parse_email_command(raw_eml: Vec<u8>) -> Result<EmailAnalysis, String> {
         parsed.body_text.as_deref(),
     );
 
-    let verdict = compute_verdict(&parsed, &auth, &urls, &brand_impersonation);
+    let content_heuristics = analyze_content(
+        parsed.headers.subject.as_deref(),
+        parsed.body_text.as_deref(),
+    );
+
+    let verdict = compute_verdict(&parsed, &auth, &urls, &brand_impersonation, &content_heuristics);
     let mitre_techniques = map_to_mitre(&parsed, &auth, &urls, &brand_impersonation);
 
-    Ok(EmailAnalysis { parsed, auth, urls, hops, iocs, verdict, mitre_techniques, brand_impersonation })
+    Ok(EmailAnalysis { parsed, auth, urls, hops, iocs, verdict, mitre_techniques, brand_impersonation, content_heuristics })
 }

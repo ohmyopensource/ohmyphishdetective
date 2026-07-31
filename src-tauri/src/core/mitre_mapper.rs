@@ -188,6 +188,7 @@ mod tests {
             actual_url: "https://evil.ru/login".to_string(),
             domain: Some("evil.ru".to_string()),
             is_mismatch: true,
+            looks_like_credential_harvesting: false,
         }];
         let result = map_to_mitre(&parsed, &clean_auth(), &urls, &no_brand_impersonation());
         assert!(result.iter().any(|t| t.id == "T1566.002"));
