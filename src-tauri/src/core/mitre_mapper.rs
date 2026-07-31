@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::core::auth_check::{AuthCheckResult, AuthVerdict};
 use crate::core::url_extractor::ExtractedUrl;
 use crate::core::mail_parser::ParsedEmail;
+use crate::core::brand_impersonation::BrandImpersonationResult;
 
 const SUSPICIOUS_EXTENSIONS: &[&str] = &[
     ".exe", ".scr", ".js", ".vbs", ".bat", ".cmd", ".ps1", ".jar", ".msi",
@@ -22,6 +23,7 @@ pub fn map_to_mitre(
     parsed: &ParsedEmail,
     auth: &AuthCheckResult,
     urls: &[ExtractedUrl],
+    brand_check: &BrandImpersonationResult,
 ) -> Vec<MitreTechnique> {
     let mut techniques = Vec::new();
 
@@ -62,14 +64,15 @@ pub fn map_to_mitre(
         });
     }
 
-    // T1656 — Impersonation
+    // T1656 — Impersonation (aggregates auth failures, domain mismatch,
+    // and brand impersonation into a single technique entry)
     let auth_failed = auth.spf == AuthVerdict::Fail
         || auth.dkim == AuthVerdict::Fail
         || auth.dmarc == AuthVerdict::Fail;
 
     let domain_mismatch = domain_mismatch(parsed);
 
-    if auth_failed || domain_mismatch {
+    if auth_failed || domain_mismatch || brand_check.detected {
         let mut evidence_parts = Vec::new();
         if auth.spf == AuthVerdict::Fail {
             evidence_parts.push("SPF failed".to_string());
@@ -82,6 +85,9 @@ pub fn map_to_mitre(
         }
         if domain_mismatch {
             evidence_parts.push("From/Return-Path domain mismatch".to_string());
+        }
+        if let Some(reason) = &brand_check.reason {
+            evidence_parts.push(reason.clone());
         }
 
         techniques.push(MitreTechnique {
@@ -149,10 +155,19 @@ mod tests {
         }
     }
 
+    fn no_brand_impersonation() -> BrandImpersonationResult {
+        BrandImpersonationResult {
+            detected: false,
+            brand: None,
+            sender_domain: None,
+            reason: None,
+        }
+    }
+
     #[test]
     fn clean_email_maps_to_no_techniques() {
         let parsed = base_parsed("a@example.com", "a@example.com");
-        let result = map_to_mitre(&parsed, &clean_auth(), &[]);
+        let result = map_to_mitre(&parsed, &clean_auth(), &[], &no_brand_impersonation());
         assert!(result.is_empty());
     }
 
@@ -161,7 +176,7 @@ mod tests {
         let parsed = base_parsed("a@example.com", "a@example.com");
         let mut auth = clean_auth();
         auth.spf = AuthVerdict::Fail;
-        let result = map_to_mitre(&parsed, &auth, &[]);
+        let result = map_to_mitre(&parsed, &auth, &[], &no_brand_impersonation());
         assert!(result.iter().any(|t| t.id == "T1656"));
     }
 
@@ -174,7 +189,7 @@ mod tests {
             domain: Some("evil.ru".to_string()),
             is_mismatch: true,
         }];
-        let result = map_to_mitre(&parsed, &clean_auth(), &urls);
+        let result = map_to_mitre(&parsed, &clean_auth(), &urls, &no_brand_impersonation());
         assert!(result.iter().any(|t| t.id == "T1566.002"));
     }
 
@@ -187,7 +202,21 @@ mod tests {
             size_bytes: 100,
             sha256: "x".to_string(),
         });
-        let result = map_to_mitre(&parsed, &clean_auth(), &[]);
+        let result = map_to_mitre(&parsed, &clean_auth(), &[], &no_brand_impersonation());
         assert!(result.iter().any(|t| t.id == "T1204.002"));
+    }
+
+    #[test]
+    fn brand_impersonation_maps_to_impersonation() {
+        let parsed = base_parsed("a@example.com", "a@example.com");
+        let brand_check = BrandImpersonationResult {
+            detected: true,
+            brand: Some("apple".to_string()),
+            sender_domain: Some("example.com".to_string()),
+            reason: Some("fake reason".to_string()),
+        };
+        let result = map_to_mitre(&parsed, &clean_auth(), &[], &brand_check);
+        let t1656_count = result.iter().filter(|t| t.id == "T1656").count();
+        assert_eq!(t1656_count, 1);
     }
 }

@@ -48,6 +48,7 @@ export interface EmailAnalysis {
   iocs: Ioc[];
   verdict: VerdictResult;
   mitre_techniques: MitreTechnique[];
+  brand_impersonation: BrandImpersonationResult;
 }
 
 export interface ExtractedUrl {
@@ -96,4 +97,11 @@ export interface MitreTechnique {
   name: string;
   tactic: string;
   evidence: string;
+}
+
+export interface BrandImpersonationResult {
+  detected: boolean;
+  brand: string | null;
+  sender_domain: string | null;
+  reason: string | null;
 }

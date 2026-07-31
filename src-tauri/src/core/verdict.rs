@@ -36,6 +36,7 @@ pub fn compute_verdict(
     parsed: &ParsedEmail,
     auth: &AuthCheckResult,
     urls: &[ExtractedUrl],
+    brand_check: &crate::core::brand_impersonation::BrandImpersonationResult,
 ) -> VerdictResult {
     let mut reasons = Vec::new();
     let mut score: u32 = 0;
@@ -117,6 +118,16 @@ pub fn compute_verdict(
     });
     score += attachment_points;
 
+    // --- Brand impersonation ---
+    let brand_points = if brand_check.detected { 35 } else { 0 };
+    reasons.push(ScoreReason {
+        description: brand_check.reason.clone().unwrap_or_else(|| {
+            "No brand impersonation pattern detected".to_string()
+        }),
+        points: brand_points,
+    });
+    score += brand_points;
+
     let verdict = match score {
         0..=20 => Verdict::Clean,
         21..=50 => Verdict::Suspicious,
@@ -165,6 +176,7 @@ mod tests {
     use super::*;
     use crate::core::mail_parser::{EmailHeaders, Attachment};
     use crate::core::auth_check::AuthVerdict;
+    use crate::core::brand_impersonation::BrandImpersonationResult;
 
     fn base_parsed(from: &str, return_path: &str) -> ParsedEmail {
         ParsedEmail {
@@ -195,13 +207,22 @@ mod tests {
         }
     }
 
+    fn no_brand_impersonation() -> BrandImpersonationResult {
+        BrandImpersonationResult {
+            detected: false,
+            brand: None,
+            sender_domain: None,
+            reason: None,
+        }
+    }
+
     #[test]
     fn clean_email_scores_zero_but_lists_all_checks() {
         let parsed = base_parsed("a@example.com", "a@example.com");
-        let result = compute_verdict(&parsed, &clean_auth(), &[]);
+        let result = compute_verdict(&parsed, &clean_auth(), &[], &no_brand_impersonation());
         assert_eq!(result.score, 0);
         assert_eq!(result.verdict, Verdict::Clean);
-        assert_eq!(result.reasons.len(), 6);
+        assert_eq!(result.reasons.len(), 7);
         assert!(result.reasons.iter().all(|r| r.points == 0));
     }
 
@@ -210,7 +231,7 @@ mod tests {
         let parsed = base_parsed("a@example.com", "a@example.com");
         let mut auth = clean_auth();
         auth.spf = AuthVerdict::Fail;
-        let result = compute_verdict(&parsed, &auth, &[]);
+        let result = compute_verdict(&parsed, &auth, &[], &no_brand_impersonation());
         assert_eq!(result.score, 30);
         assert_eq!(result.verdict, Verdict::Suspicious);
     }
@@ -221,7 +242,7 @@ mod tests {
         let mut auth = clean_auth();
         auth.spf = AuthVerdict::Fail;
         auth.dkim = AuthVerdict::Fail;
-        let result = compute_verdict(&parsed, &auth, &[]);
+        let result = compute_verdict(&parsed, &auth, &[], &no_brand_impersonation());
         assert_eq!(result.score, 70);
         assert_eq!(result.verdict, Verdict::Malicious);
     }
@@ -235,7 +256,21 @@ mod tests {
             size_bytes: 100,
             sha256: "x".to_string(),
         });
-        let result = compute_verdict(&parsed, &clean_auth(), &[]);
+        let result = compute_verdict(&parsed, &clean_auth(), &[], &no_brand_impersonation());
         assert_eq!(result.score, 30);
+    }
+
+    #[test]
+    fn brand_impersonation_adds_points() {
+        let parsed = base_parsed("a@example.com", "a@example.com");
+        let brand_check = BrandImpersonationResult {
+            detected: true,
+            brand: Some("apple".to_string()),
+            sender_domain: Some("example.com".to_string()),
+            reason: Some("fake reason".to_string()),
+        };
+        let result = compute_verdict(&parsed, &clean_auth(), &[], &brand_check);
+        assert_eq!(result.score, 35);
+        assert_eq!(result.verdict, Verdict::Suspicious);
     }
 }

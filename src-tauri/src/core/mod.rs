@@ -5,3 +5,4 @@ pub mod header_trace;
 pub mod ioc_aggregator;
 pub mod verdict;
 pub mod mitre_mapper;
+pub mod brand_impersonation;
