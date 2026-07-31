@@ -4,3 +4,4 @@ pub mod url_extractor;
 pub mod header_trace;
 pub mod ioc_aggregator;
 pub mod verdict;
+pub mod mitre_mapper;

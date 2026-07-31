@@ -137,11 +137,6 @@ fn describe_auth_check(mechanism: &str, result: &AuthVerdict) -> String {
     }
 }
 
-fn add(score: &mut u32, reasons: &mut Vec<ScoreReason>, description: &str, points: u32) {
-    *score += points;
-    reasons.push(ScoreReason { description: description.to_string(), points });
-}
-
 fn check_from_return_path_mismatch(parsed: &ParsedEmail) -> Option<String> {
     let from_domain = extract_domain_from_email(parsed.headers.from.as_deref()?);
     let return_path_domain = extract_domain_from_email(parsed.headers.return_path.as_deref()?);

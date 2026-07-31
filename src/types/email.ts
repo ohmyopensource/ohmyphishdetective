@@ -47,7 +47,9 @@ export interface EmailAnalysis {
   hops: Hop[];
   iocs: Ioc[];
   verdict: VerdictResult;
+  mitre_techniques: MitreTechnique[];
 }
+
 export interface ExtractedUrl {
   displayed_text: string | null;
   actual_url: string;
@@ -87,4 +89,11 @@ export interface VerdictResult {
   verdict: Verdict;
   score: number;
   reasons: ScoreReason[];
+}
+
+export interface MitreTechnique {
+  id: string;
+  name: string;
+  tactic: string;
+  evidence: string;
 }

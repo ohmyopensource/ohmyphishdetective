@@ -5,6 +5,7 @@ use crate::core::url_extractor::{extract_from_html, extract_from_text, Extracted
 use crate::core::header_trace::{parse_hops, Hop};
 use crate::core::ioc_aggregator::{aggregate_iocs, Ioc};
 use crate::core::verdict::{compute_verdict, VerdictResult};
+use crate::core::mitre_mapper::{map_to_mitre, MitreTechnique};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmailAnalysis {
@@ -14,6 +15,7 @@ pub struct EmailAnalysis {
     pub hops: Vec<Hop>,
     pub iocs: Vec<Ioc>,
     pub verdict: VerdictResult,
+    pub mitre_techniques: Vec<MitreTechnique>,
 }
 
 #[tauri::command]
@@ -32,6 +34,7 @@ pub fn parse_email_command(raw_eml: Vec<u8>) -> Result<EmailAnalysis, String> {
     let hops = parse_hops(&parsed.headers.received_chain);
     let iocs = aggregate_iocs(&parsed, &hops, &urls);
     let verdict = compute_verdict(&parsed, &auth, &urls);
+    let mitre_techniques = map_to_mitre(&parsed, &auth, &urls);
 
-    Ok(EmailAnalysis { parsed, auth, urls, hops, iocs, verdict })
+    Ok(EmailAnalysis { parsed, auth, urls, hops, iocs, verdict, mitre_techniques })
 }
