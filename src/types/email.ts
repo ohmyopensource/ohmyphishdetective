@@ -44,6 +44,7 @@ export interface EmailAnalysis {
   parsed: ParsedEmail;
   auth: AuthCheckResult;
   urls: ExtractedUrl[];
+  hops: Hop[];
 }
 
 export interface ExtractedUrl {
@@ -51,4 +52,12 @@ export interface ExtractedUrl {
   actual_url: string;
   domain: string | null;
   is_mismatch: boolean;
+}
+
+export interface Hop {
+  from_helo: string | null;
+  from_ip: string | null;
+  by_host: string | null;
+  timestamp: string | null;
+  raw: string;
 }
