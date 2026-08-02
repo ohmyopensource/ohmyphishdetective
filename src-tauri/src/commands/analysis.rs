@@ -8,6 +8,7 @@ use crate::core::verdict::{compute_verdict, VerdictResult};
 use crate::core::mitre_mapper::{map_to_mitre, MitreTechnique};
 use crate::core::brand_impersonation::{check_brand_impersonation, BrandImpersonationResult};
 use crate::core::content_heuristics::{analyze_content, ContentHeuristicsResult};
+use crate::core::file_validation::{validate_eml_bytes, ValidationError};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EmailAnalysis {
@@ -22,8 +23,11 @@ pub struct EmailAnalysis {
     pub content_heuristics: ContentHeuristicsResult,
 }
 
-pub fn run_email_analysis(raw_eml: &[u8]) -> Result<EmailAnalysis, String> {
+fn run_email_analysis_inner(raw_eml: &[u8]) -> Result<EmailAnalysis, String> {
+    validate_eml_bytes(raw_eml).map_err(|e: ValidationError| e.to_string())?;
+
     let parsed = parse_eml(raw_eml).map_err(|e: ParseError| e.to_string())?;
+
     let auth = check_auth(&parsed.headers.authentication_results);
 
     let urls = if let Some(html) = &parsed.body_html {
@@ -52,4 +56,16 @@ pub fn run_email_analysis(raw_eml: &[u8]) -> Result<EmailAnalysis, String> {
     let mitre_techniques = map_to_mitre(&parsed, &auth, &urls, &brand_impersonation);
 
     Ok(EmailAnalysis { parsed, auth, urls, hops, iocs, verdict, mitre_techniques, brand_impersonation, content_heuristics })
+}
+
+/// Public entry point. Wraps the analysis pipeline in catch_unwind so
+/// that an unexpected panic anywhere in the parsing/detection chain
+/// (e.g. triggered by a maliciously malformed .eml crafted to exploit
+/// an edge case in a dependency) is converted into a normal error
+/// response instead of crashing the whole Tauri application.
+pub fn run_email_analysis(raw_eml: &[u8]) -> Result<EmailAnalysis, String> {
+    std::panic::catch_unwind(|| run_email_analysis_inner(raw_eml))
+        .unwrap_or_else(|_| {
+            Err("Internal error while analyzing this email — the file may be malformed or corrupted".to_string())
+        })
 }

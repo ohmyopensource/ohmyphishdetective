@@ -153,4 +153,10 @@ export interface BatchSummary {
 export interface BatchAnalysisResult {
   results: EmailBatchResultItem[];
   summary: BatchSummary;
+  failed_files: FailedFile[];
+}
+
+export interface FailedFile {
+  filename: string;
+  error: string;
 }

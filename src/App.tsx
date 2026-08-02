@@ -113,6 +113,23 @@ function App() {
               </p>
               <p>Recurring IOCs: {batchResult.summary.recurring_iocs.length}</p>
             </div>
+
+            {batchResult.failed_files.length > 0 && (
+              <div className="bg-yellow-900 text-yellow-200 p-4 rounded mb-4">
+                <p className="font-bold mb-2">
+                  ⚠️ {batchResult.failed_files.length} file(s) could not be
+                  analyzed:
+                </p>
+                <ul className="list-disc list-inside">
+                  {batchResult.failed_files.map((f, i) => (
+                    <li key={i}>
+                      {f.filename} — {f.error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <pre className="bg-slate-800 p-4 rounded overflow-auto text-sm max-h-96">
               {JSON.stringify(batchResult, null, 2)}
             </pre>

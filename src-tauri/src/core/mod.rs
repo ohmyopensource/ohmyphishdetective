@@ -8,3 +8,4 @@ pub mod mitre_mapper;
 pub mod brand_impersonation;
 pub mod content_heuristics;
 pub mod batch_summary;
+pub mod file_validation;
