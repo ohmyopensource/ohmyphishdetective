@@ -7,10 +7,10 @@ pub enum AuthVerdict {
     SoftFail,
     Neutral,
     None,
-    NotEvaluated, // header was missing entirely
+    NotEvaluated,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthCheckResult {
     pub spf: AuthVerdict,
     pub dkim: AuthVerdict,
@@ -21,9 +21,6 @@ pub struct AuthCheckResult {
 /// Parses the raw "Authentication-Results" header lines already
 /// extracted by the mail parser and derives a verdict for each
 /// mechanism (SPF/DKIM/DMARC).
-///
-/// This relies on the receiving mail server having already performed
-/// the check — it does NOT do its own DNS-based verification.
 pub fn check_auth(auth_results_headers: &[String]) -> AuthCheckResult {
     if auth_results_headers.is_empty() {
         return AuthCheckResult {
@@ -34,9 +31,6 @@ pub fn check_auth(auth_results_headers: &[String]) -> AuthCheckResult {
         };
     }
 
-    // If there are multiple Authentication-Results headers (some
-    // messages hop through several servers), we join them and scan
-    // for the first mechanism=value occurrence of each type.
     let combined = auth_results_headers.join(" ; ");
 
     AuthCheckResult {

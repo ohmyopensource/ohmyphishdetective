@@ -17,7 +17,7 @@ pub struct ScoreReason {
     pub points: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VerdictResult {
     pub verdict: Verdict,
     pub score: u32,

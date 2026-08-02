@@ -26,7 +26,7 @@ fn extract_received_chain(raw_header_block: &str) -> Vec<String> {
 }
 
 /// Fully parsed representation of an .eml file as JSON.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ParsedEmail {
     pub headers: EmailHeaders,
     pub body_text: Option<String>,
@@ -36,7 +36,7 @@ pub struct ParsedEmail {
 }
 
 /// Subset of headers relevant to phishing analysis.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EmailHeaders {
     pub from: Option<String>,
     pub reply_to: Option<String>,
@@ -49,7 +49,7 @@ pub struct EmailHeaders {
     pub authentication_results: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Attachment {
     pub filename: Option<String>,
     pub content_type: Option<String>,

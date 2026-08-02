@@ -114,3 +114,43 @@ export interface ContentHeuristicsResult {
   repeated_word_detected: boolean;
   matched_phrases: string[];
 }
+
+export interface EmailFileInput {
+  filename: string;
+  raw_eml: number[];
+}
+
+export interface EmailBatchResultItem {
+  filename: string;
+  analysis: { Ok: EmailAnalysis } | { Err: string };
+}
+
+export interface RecurringIoc {
+  ioc_type: string;
+  value: string;
+  occurrence_count: number;
+  seen_in_emails: string[];
+}
+
+export interface RecurringTechnique {
+  id: string;
+  name: string;
+  occurrence_count: number;
+}
+
+export interface BatchSummary {
+  total_emails: number;
+  clean_count: number;
+  suspicious_count: number;
+  malicious_count: number;
+  clean_percentage: number;
+  suspicious_percentage: number;
+  malicious_percentage: number;
+  recurring_iocs: RecurringIoc[];
+  recurring_mitre_techniques: RecurringTechnique[];
+}
+
+export interface BatchAnalysisResult {
+  results: EmailBatchResultItem[];
+  summary: BatchSummary;
+}

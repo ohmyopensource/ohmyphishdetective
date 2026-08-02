@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use regex::Regex;
+use std::sync::OnceLock;
+use std::collections::HashMap;
 
 /// A small curated list of frequently-impersonated brands and their
 /// official domains.
@@ -27,6 +30,24 @@ pub struct BrandImpersonationResult {
     pub reason: Option<String>,
 }
 
+static DOMAIN_MATCH_CACHE: OnceLock<HashMap<&'static str, Regex>> = OnceLock::new();
+
+fn domain_match_regexes() -> &'static HashMap<&'static str, Regex> {
+    DOMAIN_MATCH_CACHE.get_or_init(|| {
+        KNOWN_BRANDS
+            .iter()
+            .map(|(_, official_domain)| {
+                let root = official_domain.split('.').next().unwrap_or(official_domain);
+                let pattern = format!(
+                    r"(?i)(^|\.){}\.[a-z]{{2,3}}(\.[a-z]{{2,3}})?$",
+                    regex::escape(root)
+                );
+                (*official_domain, Regex::new(&pattern).unwrap())
+            })
+            .collect()
+    })
+}
+
 /// Checks whether the email content references a well-known brand
 /// while the sending domain does not belong to that brand
 pub fn check_brand_impersonation(
@@ -51,15 +72,15 @@ pub fn check_brand_impersonation(
             continue;
         };
 
-        if domain == official_domain || domain.ends_with(&format!(".{}", official_domain)) {
-            continue;
+        if let Some(regex) = domain_match_regexes().get(official_domain) {
+            if regex.is_match(domain) {
+                continue;
+            }
         }
 
-        // Sender domain contains the brand name as a substring but isn't
-        // the real domain
         let reason = if domain.contains(brand_keyword) {
             format!(
-                "Sender domain '{}' contains brand name '{}' but is not the official domain ({})",
+                "Sender domain '{}' contains brand name '{}' but is not a recognized {} domain",
                 domain, brand_keyword, official_domain
             )
         } else {
@@ -125,6 +146,26 @@ mod tests {
             Some("Some content"),
         );
         assert!(!result.detected);
+    }
+
+    #[test]
+    fn does_not_flag_legit_international_variant() {
+        let result = check_brand_impersonation(
+            Some("seller@members.ebay.it"),
+            Some("New message about your eBay item"),
+            Some("You received a message on eBay"),
+        );
+        assert!(!result.detected);
+    }
+
+    #[test]
+    fn still_flags_lookalike_with_brand_as_subdomain_of_other_domain() {
+        let result = check_brand_impersonation(
+            Some("support@ebay.evil-domain.com"),
+            Some("eBay account notice"),
+            Some("Your eBay account needs verification"),
+        );
+        assert!(result.detected);
     }
 
     #[test]

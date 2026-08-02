@@ -6,7 +6,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            commands::parse_email::parse_email_command
+            commands::parse_email::parse_email_command,
+            commands::analyze_batch::analyze_batch_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
