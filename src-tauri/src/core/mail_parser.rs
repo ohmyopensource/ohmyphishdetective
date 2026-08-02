@@ -12,7 +12,7 @@ fn received_regex() -> &'static Regex {
     })
 }
 
-fn extract_received_chain(raw_header_block: &str) -> Vec<String> {
+pub fn extract_received_chain(raw_header_block: &str) -> Vec<String> {
     received_regex()
         .captures_iter(raw_header_block)
         .map(|cap| {

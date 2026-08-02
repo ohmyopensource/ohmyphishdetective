@@ -63,7 +63,7 @@ function App() {
         </h1>
         <input
           type="file"
-          accept=".eml"
+          accept=".eml,.msg"
           onChange={handleFileChange}
           className="mb-6 block"
         />
@@ -85,7 +85,7 @@ function App() {
         </h1>
         <input
           type="file"
-          accept=".eml"
+          accept=".eml,.msg"
           multiple
           onChange={handleBatchChange}
           className="mb-6 block"

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::core::msg_adapter::looks_like_msg_file;
 
 const MAX_FILE_SIZE_BYTES: usize = 25 * 1024 * 1024;
 const HEADER_SNIFF_WINDOW: usize = 4096;
@@ -45,7 +46,7 @@ pub fn validate_eml_bytes(bytes: &[u8]) -> Result<(), ValidationError> {
         });
     }
 
-    if !looks_like_email(bytes) {
+    if !looks_like_email(bytes) && !looks_like_msg_file(bytes) {
         return Err(ValidationError::DoesNotLookLikeEmail);
     }
 

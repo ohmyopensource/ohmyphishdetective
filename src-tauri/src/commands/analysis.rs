@@ -9,6 +9,7 @@ use crate::core::mitre_mapper::{map_to_mitre, MitreTechnique};
 use crate::core::brand_impersonation::{check_brand_impersonation, BrandImpersonationResult};
 use crate::core::content_heuristics::{analyze_content, ContentHeuristicsResult};
 use crate::core::file_validation::{validate_eml_bytes, ValidationError};
+use crate::core::msg_adapter::{looks_like_msg_file, parse_msg};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EmailAnalysis {
@@ -26,7 +27,11 @@ pub struct EmailAnalysis {
 fn run_email_analysis_inner(raw_eml: &[u8]) -> Result<EmailAnalysis, String> {
     validate_eml_bytes(raw_eml).map_err(|e: ValidationError| e.to_string())?;
 
-    let parsed = parse_eml(raw_eml).map_err(|e: ParseError| e.to_string())?;
+    let parsed = if looks_like_msg_file(raw_eml) {
+        parse_msg(raw_eml).map_err(|e: ParseError| e.to_string())?
+    } else {
+        parse_eml(raw_eml).map_err(|e: ParseError| e.to_string())?
+    };
 
     let auth = check_auth(&parsed.headers.authentication_results);
 
