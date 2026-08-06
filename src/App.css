@@ -1,1 +1,103 @@
 @import 'tailwindcss';
+
+/* Custom Fonts */
+@font-face {
+  font-family: 'Outfit';
+  src: url('./assets/fonts/Outfit-VariableFont_wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('./assets/fonts/Quicksand-VariableFont_wght.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Quicksand', sans-serif;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  font-weight: 400;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+@theme {
+  --color-ink: #14181f;
+  --color-ink-soft: #1b212b;
+  --color-paper: #edeae2;
+  --color-paper-dim: #b8b3a6;
+  --color-evidence: #c9a227;
+  --color-line: #2b313c;
+
+  --color-clean: #4a7c59;
+  --color-clean-bg: #1b2a20;
+  --color-suspicious: #c98a2c;
+  --color-suspicious-bg: #2b2115;
+  --color-malicious: #b3452c;
+  --color-malicious-bg: #2c1912;
+
+  --font-display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Quicksand', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@keyframes btn-ripple {
+  to {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes skeleton-wave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[skeleton-shimmer_1\.6s_ease-in-out_infinite\],
+  .animate-\[skeleton-wave_1\.8s_linear_infinite\] {
+    animation: skeleton-pulse 1.8s ease-in-out infinite !important;
+    background: var(--color-line) !important;
+  }
+}
