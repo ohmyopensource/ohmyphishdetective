@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "oh-my-phish-detective",
-        "width": 800,
-        "height": 600
+        "title": "OhMyPhishDetective!",
+        "width": 900,
+        "height": 700,
+        "dragDropEnabled": false
       }
     ],
     "security": {
