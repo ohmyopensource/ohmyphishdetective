@@ -4,9 +4,13 @@ import { CustomButton } from '../ui/CustomButton';
 import { CustomText } from '../ui/CustomText';
 import { CustomCard } from '../ui/CustomCard';
 import { CustomBadge } from '../ui/CustomBadge';
+import { SkeletonStat } from '../ui/SkeletonPresets';
+import { analyzeBatch } from '../../lib/tauri';
+import type { BatchAnalysisResult, EmailFileInput } from '../../types/email';
 
 interface AnalyzeScreenProps {
   onBack: () => void;
+  onAnalysisComplete: (result: BatchAnalysisResult) => void;
 }
 
 function formatFileSize(bytes: number): string {
@@ -15,9 +19,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function AnalyzeScreen({ onBack }: AnalyzeScreenProps) {
+export function AnalyzeScreen({
+  onBack,
+  onAnalysisComplete,
+}: AnalyzeScreenProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const justDroppedRef = useRef(false);
 
@@ -55,10 +64,44 @@ export function AnalyzeScreen({ onBack }: AnalyzeScreenProps) {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleStartAnalysis() {
-    console.log(
-      'Starting analysis on:',
-      files.map((f) => f.name),
+  async function handleStartAnalysis() {
+    setError(null);
+    setIsAnalyzing(true);
+
+    try {
+      const inputs: EmailFileInput[] = await Promise.all(
+        files.map(async (file) => {
+          const buffer = await file.arrayBuffer();
+          const bytes = Array.from(new Uint8Array(buffer));
+          return { filename: file.name, raw_eml: bytes };
+        }),
+      );
+
+      const result = await analyzeBatch(inputs);
+      onAnalysisComplete(result);
+    } catch (err) {
+      setError(String(err));
+      setIsAnalyzing(false);
+    }
+  }
+
+  if (isAnalyzing) {
+    return (
+      <div className="min-h-screen bg-[var(--color-ink)] px-6 py-10 flex flex-col items-center justify-center">
+        <div className="w-full max-w-xl flex flex-col items-center gap-6">
+          <CustomText variant="h4" align="center">
+            Analyzing {files.length} email{files.length > 1 ? 's' : ''}…
+          </CustomText>
+          <CustomText variant="body-sm" color="muted" align="center">
+            Checking headers, extracting links, cross-referencing indicators
+          </CustomText>
+          <div className="grid grid-cols-3 gap-3 w-full mt-4">
+            <SkeletonStat />
+            <SkeletonStat />
+            <SkeletonStat />
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -80,6 +123,19 @@ export function AnalyzeScreen({ onBack }: AnalyzeScreenProps) {
         <CustomText variant="body-sm" color="muted" className="mb-8">
           Drop one or more .eml / .msg files, or browse to select them.
         </CustomText>
+
+        {error && (
+          <CustomCard
+            variant="error"
+            padding="md"
+            shadow="none"
+            className="mb-6"
+          >
+            <CustomText variant="body-sm" color="error">
+              {error}
+            </CustomText>
+          </CustomCard>
+        )}
 
         {/* Dropzone */}
         <div
@@ -181,7 +237,6 @@ export function AnalyzeScreen({ onBack }: AnalyzeScreenProps) {
           </div>
         )}
 
-        {/* Start analysis */}
         <CustomButton
           label={
             files.length > 0

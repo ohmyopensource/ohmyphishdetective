@@ -3,11 +3,16 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { MainMenu } from './components/screens/MainMenu';
 import { AboutScreen } from './components/screens/AboutScreen';
 import { AnalyzeScreen } from './components/screens/AnalyzeScreen';
+import { ResultsScreen } from './components/screens/ResultsScreen';
+import type { BatchAnalysisResult } from './types/email';
 
-type Screen = 'menu' | 'analyze' | 'reports' | 'settings' | 'about';
+type Screen = 'menu' | 'analyze' | 'reports' | 'settings' | 'about' | 'results';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('menu');
+  const [batchResult, setBatchResult] = useState<BatchAnalysisResult | null>(
+    null,
+  );
 
   async function handleExit() {
     await getCurrentWindow().close();
@@ -18,7 +23,25 @@ function App() {
   }
 
   if (screen === 'analyze') {
-    return <AnalyzeScreen onBack={() => setScreen('menu')} />;
+    return (
+      <AnalyzeScreen
+        onBack={() => setScreen('menu')}
+        onAnalysisComplete={(result) => {
+          setBatchResult(result);
+          setScreen('results');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'results' && batchResult) {
+    return (
+      <ResultsScreen
+        result={batchResult}
+        onBack={() => setScreen('menu')}
+        onNewAnalysis={() => setScreen('analyze')}
+      />
+    );
   }
 
   return (
