@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ArrowLeft,
   RotateCcw,
@@ -6,6 +7,7 @@ import {
   ShieldAlert,
   ShieldX,
   TriangleAlert,
+  FileDown,
 } from 'lucide-react';
 import { CustomButton } from '../ui/CustomButton';
 import { CustomText } from '../ui/CustomText';
@@ -14,6 +16,7 @@ import { CustomAccordion } from '../ui/CustomAccordion';
 import { CustomBadge } from '../ui/CustomBadge';
 import { CustomCard } from '../ui/CustomCard';
 import { EmailDetail } from '../results/EmailDetail';
+import { PrintReportOverlay } from '../results/PrintReportOverlay';
 import type { AccordionItem, AccordionVariant } from '../ui/CustomAccordion';
 import type { BatchAnalysisResult, Verdict } from '../../types/email';
 
@@ -47,6 +50,8 @@ export function ResultsScreen({
   onNewAnalysis,
 }: ResultsScreenProps) {
   const { summary, results, failed_files } = result;
+
+  const [showPrintReport, setShowPrintReport] = useState(false);
 
   const accordionItems: AccordionItem[] = [];
   for (const r of results) {
@@ -94,6 +99,13 @@ export function ResultsScreen({
             variant="secondary"
             size="sm"
             onClick={onNewAnalysis}
+          />
+          <CustomButton
+            label="Export PDF"
+            icon={<FileDown size={16} />}
+            variant="primary"
+            size="sm"
+            onClick={() => setShowPrintReport(true)}
           />
         </div>
 
@@ -209,6 +221,13 @@ export function ResultsScreen({
           </>
         )}
       </div>
+
+      {showPrintReport && (
+        <PrintReportOverlay
+          result={result}
+          onClose={() => setShowPrintReport(false)}
+        />
+      )}
     </div>
   );
 }

@@ -101,3 +101,256 @@ h6 {
     background: var(--color-line) !important;
   }
 }
+
+/* ============ Print Report ============ */
+.print-report {
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: 'Quicksand', ui-sans-serif, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.pr-header {
+  border-bottom: 3px solid #1a1a1a;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pr-header-brand {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.pr-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+}
+
+.pr-meta {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.pr-section {
+  margin-bottom: 2rem;
+  break-inside: avoid;
+}
+
+.pr-h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.pr-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pr-summary-table td {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.pr-summary-label {
+  font-weight: 600;
+}
+
+.pr-summary-value {
+  text-align: right;
+}
+
+.pr-callout {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f7f4e9;
+  border-left: 3px solid #b3902a;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.pr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+.pr-table th {
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid #333;
+  padding: 0.35rem 0.5rem;
+}
+
+.pr-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #e5e5e5;
+  vertical-align: top;
+}
+
+.pr-table-compact td {
+  padding: 0.25rem 0.5rem;
+}
+
+.pr-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.78em;
+  word-break: break-all;
+}
+
+.pr-small {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.pr-email-block {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  break-inside: avoid;
+}
+
+.pr-email-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.pr-email-index {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
+}
+
+.pr-email-filename {
+  font-weight: 700;
+  font-size: 0.95rem;
+  word-break: break-all;
+}
+
+.pr-verdict-stamp {
+  border: 2px solid;
+  border-radius: 4px;
+  padding: 0.3rem 0.7rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-align: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.pr-verdict-score {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-top: 0.15rem;
+}
+
+.pr-kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+.pr-kv-table td {
+  padding: 0.25rem 0;
+  vertical-align: top;
+}
+
+.pr-kv-key {
+  font-weight: 600;
+  width: 130px;
+  color: #555;
+}
+
+.pr-subheading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #555;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.pr-points {
+  text-align: right;
+  font-weight: 700;
+  color: #8a2e10;
+  white-space: nowrap;
+}
+
+.pr-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ccc;
+  font-size: 0.7rem;
+  color: #888;
+  text-align: center;
+}
+
+/* Screen */
+.print-report-overlay {
+  position: fixed;
+  inset: 0;
+  background: #525659;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 2rem 1rem;
+}
+
+.print-report-toolbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  z-index: 10;
+}
+
+/* Print */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-report,
+  .print-report * {
+    visibility: visible;
+  }
+  .print-report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+  }
+  .print-report-toolbar {
+    display: none;
+  }
+  .pr-email-block {
+    break-inside: avoid;
+  }
+}
