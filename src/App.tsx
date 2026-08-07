@@ -4,12 +4,14 @@ import { MainMenu } from './components/screens/MainMenu';
 import { AboutScreen } from './components/screens/AboutScreen';
 import { AnalyzeScreen } from './components/screens/AnalyzeScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
-import type { BatchAnalysisResult } from './types/email';
 import { ReportsScreen } from './components/screens/ReportsScreen';
+import { SettingsScreen } from './components/screens/SettingsScreen';
+import { PreferencesProvider } from './lib/preferences';
+import type { BatchAnalysisResult } from './types/email';
 
 type Screen = 'menu' | 'analyze' | 'reports' | 'settings' | 'about' | 'results';
 
-function App() {
+function AppContent() {
   const [screen, setScreen] = useState<Screen>('menu');
   const [batchResult, setBatchResult] = useState<BatchAnalysisResult | null>(
     null,
@@ -19,9 +21,10 @@ function App() {
     await getCurrentWindow().close();
   }
 
-  if (screen === 'about') {
+  if (screen === 'about')
     return <AboutScreen onBack={() => setScreen('menu')} />;
-  }
+  if (screen === 'settings')
+    return <SettingsScreen onBack={() => setScreen('menu')} />;
 
   if (screen === 'analyze') {
     return (
@@ -59,6 +62,14 @@ function App() {
 
   return (
     <MainMenu onNavigate={(target) => setScreen(target)} onExit={handleExit} />
+  );
+}
+
+function App() {
+  return (
+    <PreferencesProvider>
+      <AppContent />
+    </PreferencesProvider>
   );
 }
 
