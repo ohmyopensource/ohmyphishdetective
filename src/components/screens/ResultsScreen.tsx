@@ -17,6 +17,8 @@ import { CustomBadge } from '../ui/CustomBadge';
 import { CustomCard } from '../ui/CustomCard';
 import { EmailDetail } from '../results/EmailDetail';
 import { PrintReportOverlay } from '../results/PrintReportOverlay';
+import { Save } from 'lucide-react';
+import { saveReport } from '../../lib/tauri';
 import type { AccordionItem, AccordionVariant } from '../ui/CustomAccordion';
 import type { BatchAnalysisResult, Verdict } from '../../types/email';
 
@@ -52,6 +54,9 @@ export function ResultsScreen({
   const { summary, results, failed_files } = result;
 
   const [showPrintReport, setShowPrintReport] = useState(false);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>(
+    'idle',
+  );
 
   const accordionItems: AccordionItem[] = [];
   for (const r of results) {
@@ -82,6 +87,17 @@ export function ResultsScreen({
     });
   }
 
+  async function handleSaveReport() {
+    setSaveState('saving');
+    try {
+      await saveReport(result);
+      setSaveState('saved');
+    } catch (err) {
+      console.error('Failed to save report:', err);
+      setSaveState('idle');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-ink)] px-6 py-10 flex flex-col items-center">
       <div className="w-full max-w-3xl">
@@ -106,6 +122,16 @@ export function ResultsScreen({
             variant="primary"
             size="sm"
             onClick={() => setShowPrintReport(true)}
+          />
+          <CustomButton
+            label="Save Report"
+            icon={<Save size={16} />}
+            variant="secondary"
+            size="sm"
+            loading={saveState === 'saving'}
+            succeeded={saveState === 'saved'}
+            succeededLabel="Saved!"
+            onClick={handleSaveReport}
           />
         </div>
 

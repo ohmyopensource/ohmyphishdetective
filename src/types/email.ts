@@ -160,3 +160,12 @@ export interface FailedFile {
   filename: string;
   error: string;
 }
+
+export interface ReportSummary {
+  id: number;
+  created_at: string;
+  total_emails: number;
+  clean_count: number;
+  suspicious_count: number;
+  malicious_count: number;
+}

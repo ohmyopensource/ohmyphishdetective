@@ -5,6 +5,7 @@ import { AboutScreen } from './components/screens/AboutScreen';
 import { AnalyzeScreen } from './components/screens/AnalyzeScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
 import type { BatchAnalysisResult } from './types/email';
+import { ReportsScreen } from './components/screens/ReportsScreen';
 
 type Screen = 'menu' | 'analyze' | 'reports' | 'settings' | 'about' | 'results';
 
@@ -27,6 +28,18 @@ function App() {
       <AnalyzeScreen
         onBack={() => setScreen('menu')}
         onAnalysisComplete={(result) => {
+          setBatchResult(result);
+          setScreen('results');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'reports') {
+    return (
+      <ReportsScreen
+        onBack={() => setScreen('menu')}
+        onOpenReport={(result) => {
           setBatchResult(result);
           setScreen('results');
         }}
